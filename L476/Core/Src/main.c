@@ -24,7 +24,10 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <string.h>
 
+#include "../../Sensors/bmp280/bmp280.h"
+#include "../../Sensors/bmp280/bmp280_application.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -56,6 +59,12 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+void bmp280_loop()
+{
+//	bmp280_initialize();
+	bmp280_application_initialize();
+}
 
 /* USER CODE END 0 */
 
@@ -90,6 +99,14 @@ int main(void)
   MX_USART2_UART_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
+
+  uint8_t msg[] = "Hello World\r\n";
+  HAL_UART_Transmit(&huart2, msg, strlen(msg), HAL_MAX_DELAY);
+
+  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+  __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 20e3);
+
+  bmp280_loop();
 
   /* USER CODE END 2 */
 
