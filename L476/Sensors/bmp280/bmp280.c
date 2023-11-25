@@ -7,6 +7,7 @@
 
 
 #include "bmp280.h"
+#include "usart.h"
 
 
 //=============================================================================
@@ -15,6 +16,7 @@
 
 bmp280_memory_operation *bmp280_read_registers;
 bmp280_memory_operation *bmp280_write_registers;
+bmp280_sleep_function   *bmp280_sleep;
 
 //=============================================================================
 //	static function declerations
@@ -29,8 +31,6 @@ static bool bmp280_calculate_Pressure_256(uint8_t *measurement_data, uint32_t *P
 //=============================================================================
 //	variables
 //=============================================================================
-
-bool is_initialized;
 
 // trimming parameters - temperature
 uint16_t dig_T1;
@@ -48,6 +48,10 @@ int16_t dig_P7;
 int16_t dig_P8;
 int16_t dig_P9;
 
+// reference parameters
+double pressure_reference;
+double temperature_reference;
+
 
 //=============================================================================
 //	function definitions
@@ -57,13 +61,24 @@ int16_t dig_P9;
 //=============================================================================
 //	initialization
 //=============================================================================
-bool bmp280_initialize(bmp280_memory_operation *bmp280_read, bmp280_memory_operation *bmp280_write)
+bool bmp280_initialize(bmp280_memory_operation *bmp280_read, bmp280_memory_operation *bmp280_write, bmp280_sleep_function *bmp280_sleep_fn)
 {
 	bool result = true;
-	is_initialized = false;
+	uint8_t chip_id;
+
+	if (bmp280_read != 0x0 && bmp280_write != 0x0 && bmp280_sleep_fn != 0x0)
+	{
+		bmp280_read_registers = bmp280_read;
+		bmp280_write_registers = bmp280_write;
+		bmp280_sleep = bmp280_sleep_fn;
+	}
+	else
+	{
+		result = false;
+	}
 
 	// check CHIP ID
-	uint8_t chip_id;
+
 	if (result == true)
 	{
 		result = bmp280_read_registers(BMP280_ADDRESS_ID, &chip_id, 1);
@@ -82,15 +97,20 @@ bool bmp280_initialize(bmp280_memory_operation *bmp280_read, bmp280_memory_opera
 		result = bmp280_read_trimming_parameters();
 	}
 
-	// store initialized value => will be used as start check for any other function
-	is_initialized = result;
+	// set reference pressure/temperature at sea-level
+	if (result == true)
+	{
+		pressure_reference = 101325;
+		temperature_reference = 15;
+	}
+
 	return result;
 }
 
 
-bool bmp280_set_configuration(bmp280_standby_time_enum standby_time, bmp280_filter_coefficient filter, bmp280_spi3w_enabled_enum spi3w_enabled)
+bool bmp280_set_configuration(bmp280_standby_time_enum standby_time, bmp280_filter_coefficient_enum filter, bmp280_spi3w_enabled_enum spi3w_enabled)
 {
-	bool result = is_initialized;
+	bool result = true;
 	uint8_t config_register = (uint8_t)standby_time | (uint8_t)filter | (uint8_t)spi3w_enabled;
 
 	if (result == true)
@@ -102,7 +122,7 @@ bool bmp280_set_configuration(bmp280_standby_time_enum standby_time, bmp280_filt
 
 bool bmp280_set_measurement_control(bmp280_temperature_oversampling_enum temperature_oversampling, bmp280_pressure_oversampling_enum pressure_oversampling, bmp280_power_mode_enum power_mode)
 {
-	bool result = is_initialized;
+	bool result = true;
 	uint8_t measurement_ctrl_register = (uint8_t)temperature_oversampling | (uint8_t)pressure_oversampling | (uint8_t)power_mode;
 
 	if (result == true)
@@ -114,7 +134,7 @@ bool bmp280_set_measurement_control(bmp280_temperature_oversampling_enum tempera
 
 bool bmp280_get_temperature(double *temperature)
 {
-	bool result = is_initialized;
+	bool result = true;
 	uint8_t measurement_data[BMP280_LENGTH_MEASUREMENT_DATA];
 	int32_t Temperature_100, t_fine;
 
@@ -141,7 +161,7 @@ bool bmp280_get_temperature(double *temperature)
 
 bool bmp280_get_pressure(double *pressure)
 {
-	bool result = is_initialized;
+	bool result = true;
 
 	// read register data
 	if (result == true)
@@ -155,7 +175,7 @@ bool bmp280_get_pressure(double *pressure)
 
 bool bmp280_get_temperature_and_pressure(double *temperature, double *pressure)
 {
-	bool result = is_initialized;
+	bool result = true;
 	uint8_t measurement_data[BMP280_LENGTH_MEASUREMENT_DATA];
 	int32_t Temperature_100, t_fine;
 	uint32_t Pressure_256;
@@ -194,7 +214,79 @@ bool bmp280_get_temperature_and_pressure(double *temperature, double *pressure)
 
 bool bmp280_calibrate()
 {
-	return true;
+	bool result = true;
+	uint8_t previous_config;
+	uint8_t previous_measurement_control;
+
+	const uint8_t number_samples = 20;
+	double pressure_list[number_samples];
+	double temperature_list[number_samples];
+
+	bmp280_power_mode_enum power_mode = BMP280_POWER_MODE_NORMAL;
+	bmp280_pressure_oversampling_enum pressure_oversampling = BMP280_PRESSURE_OVERSAMPLING_16X_ULTRA_HIGH_RESOLUTION;
+	bmp280_temperature_oversampling_enum temperature_oversampling = BMP280_TEMPERATURE_OVERSAMPLING_2X;
+
+	bmp280_filter_coefficient_enum filter = BMP280_FILTER_COEFFIENT_16X;
+	bmp280_standby_time_enum standby_time = BMP280_STANDBY_TIME_0_5_MS;
+	bmp280_spi3w_enabled_enum spi3w_enabled = BMP280_SPI3W_DISABLED;
+
+	// retrieve current values
+	if (result == true)
+	{
+		result = bmp280_read_registers(BMP280_ADDRESS_CONFIG, &previous_config, 1);
+	}
+	if (result == true)
+	{
+		result = bmp280_read_registers(BMP280_ADDRESS_MEASUREMENT_CONTROL, &previous_measurement_control, 1);
+	}
+
+	// set configuration for "indoor navigation"
+	if (result == true)
+	{
+		result = bmp280_set_configuration(standby_time, filter, spi3w_enabled);
+	}
+	if (result == true)
+	{
+		result = bmp280_set_measurement_control(temperature_oversampling, pressure_oversampling, power_mode);
+	}
+
+	// throw away first set of samples to stabilize internal filter
+	for (uint8_t n = 0; n < 10 && result == true; n++)
+	{
+		result = bmp280_get_temperature_and_pressure(&(temperature_list[0]), &(pressure_list[0]));
+		bmp280_sleep(40);
+	}
+	// use second set of samples
+	for (uint8_t n = 0; n < number_samples && result == true; n++)
+	{
+		result = bmp280_get_temperature_and_pressure(&(temperature_list[n]), &(pressure_list[n]));
+		bmp280_sleep(40);
+	}
+
+	// average out
+	if (result == true)
+	{
+		temperature_reference = 0;
+		pressure_reference = 0;
+
+		for(uint8_t n = 0; n < number_samples; n++)
+		{
+			temperature_reference += temperature_list[n] / number_samples;
+			pressure_reference += pressure_list[n] / number_samples;
+		}
+	}
+
+	// restore previous settings
+	if (result == true)
+	{
+		result = bmp280_write_registers(BMP280_ADDRESS_MEASUREMENT_CONTROL, &previous_measurement_control, 1);
+	}
+	if (result == true)
+	{
+		result = bmp280_write_registers(BMP280_ADDRESS_CONFIG, &previous_config, 1);
+	}
+
+	return result;
 }
 
 bool bmp280_get_altitude_delta(double *altitude_delta)
@@ -208,7 +300,7 @@ bool bmp280_get_altitude_delta(double *altitude_delta)
 
 static bool bmp280_read_trimming_parameters()
 {
-	bool result = is_initialized;
+	bool result = true;
 
 	uint8_t calibration_data[BMP280_LENGTH_CALIBRATION];
 
@@ -244,7 +336,7 @@ static bool bmp280_read_measurement_registers(uint8_t *measurement_data)
 {
 	// NOTE: since `measurement_data` is ONLY passed around in internal functions, no DATA_LENGTH checks are made
 	// 		 and the assumption is that the DATA_LENGTH was defined properly in the calling function
-	bool result = is_initialized;
+	bool result = true;
 
 	if (result == true)
 	{
@@ -258,7 +350,7 @@ static bool bmp280_read_measurement_registers(uint8_t *measurement_data)
 //-----------------------------------------------------------------------------
 static bool bmp280_calculate_Temperature_100(uint8_t *measurement_data, int32_t *Temperature_100, int32_t *t_fine)
 {
-	bool result = is_initialized;
+	bool result = true;
 
 	int32_t ADC_Temperature = (int32_t) (measurement_data[3] << 12) | (measurement_data[4] << 4) | (measurement_data[5] >> 4);
 
@@ -276,7 +368,7 @@ static bool bmp280_calculate_Temperature_100(uint8_t *measurement_data, int32_t 
 
 static bool bmp280_calculate_Pressure_256(uint8_t *measurement_data, uint32_t *Pressure_256, int32_t t_fine)
 {
-	bool result = is_initialized;
+	bool result = true;
 	int64_t p_var1, p_var2, p_fine;
 
 	int32_t ADC_Pressure = (int32_t) (measurement_data[0] << 12) | (measurement_data[1] << 4) | (measurement_data[2] >> 4);

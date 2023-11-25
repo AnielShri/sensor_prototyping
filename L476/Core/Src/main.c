@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "i2c.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
@@ -64,6 +65,8 @@ void bmp280_loop()
 {
 //	bmp280_initialize();
 	bmp280_application_initialize();
+
+
 }
 
 /* USER CODE END 0 */
@@ -98,13 +101,27 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   MX_TIM2_Init();
+  MX_I2C3_Init();
   /* USER CODE BEGIN 2 */
 
-  uint8_t msg[] = "Hello World\r\n";
+  uint8_t msg[64];
+  sprintf((char *)msg, "Hello World\r\n");
   HAL_UART_Transmit(&huart2, msg, strlen(msg), HAL_MAX_DELAY);
 
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
   __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 20e3);
+
+  uint16_t msg_len;
+
+  for (uint8_t i2c_addr = 0; i2c_addr < 127; i2c_addr++)
+  {
+	  HAL_StatusTypeDef result = HAL_I2C_IsDeviceReady(&hi2c3, (i2c_addr << 1), 3, 1000);
+	  if (result == HAL_OK)
+	  {
+		  msg_len = (uint16_t)sprintf((char *)msg, "I2C device found at: %d (0x%x)\r\n", i2c_addr, i2c_addr);
+		  HAL_UART_Transmit(&huart2, msg, msg_len, 1000);
+	  }
+  }
 
   bmp280_loop();
 
