@@ -14,16 +14,10 @@
 #include "bmp280_application.h"
 
 
-
-//extern UART_HandleTypeDef huart2;
-//exterm I2C_HandleTypeDef hi2c3;
-
 const uint8_t device_i2c_address = BMP280_I2C_DEVICE_ADDRESS;
 
 bool bmp280_application_read_registers(const uint8_t memory_address, uint8_t *data_buffer, const uint16_t data_length)
 {
-//	printf("BMP280 - read registers: 0x%x, 0x%x, 0x%x\n", memory_address, data_buffer, data_length);
-
 	bool result = true;
 	uint8_t msg[92];
 	uint16_t msg_len;
@@ -104,7 +98,7 @@ bool bmp280_application_initialize()
 	bmp280_pressure_oversampling_enum pressure_oversampling = BMP280_PRESSURE_OVERSAMPLING_16X_ULTRA_HIGH_RESOLUTION;
 	bmp280_temperature_oversampling_enum temperature_oversampling = BMP280_TEMPERATURE_OVERSAMPLING_2X;
 
-	bmp280_filter_coefficient_enum filter = BMP280_FILTER_OFF;
+	bmp280_filter_coefficient_enum filter = BMP280_FILTER_COEFFIENT_4X;
 	bmp280_standby_time_enum standby_time = BMP280_STANDBY_TIME_0_5_MS;
 	bmp280_spi3w_enabled_enum spi3w_enabled = BMP280_SPI3W_DISABLED;
 
@@ -120,9 +114,16 @@ bool bmp280_application_initialize()
 
 	return result;
 }
+
 bool bmp280_application_get_altitude_delta(double *altitude_delta)
 {
-	return true;
+	bool result = true;
+
+	if (result == true)
+	{
+		result = bmp280_get_altitude_delta(altitude_delta);
+	}
+	return result;
 }
 
 

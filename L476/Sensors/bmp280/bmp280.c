@@ -5,6 +5,7 @@
  *      Author: Aniel
  */
 
+#include <math.h>
 
 #include "bmp280.h"
 #include "usart.h"
@@ -50,7 +51,7 @@ int16_t dig_P9;
 
 // reference parameters
 double pressure_reference;
-double temperature_reference;
+double temperature_reference_over_Lb;
 
 
 //=============================================================================
@@ -100,8 +101,8 @@ bool bmp280_initialize(bmp280_memory_operation *bmp280_read, bmp280_memory_opera
 	// set reference pressure/temperature at sea-level
 	if (result == true)
 	{
-		pressure_reference = 101325;
-		temperature_reference = 15;
+		pressure_reference = 101325; // at sea level
+		temperature_reference_over_Lb = (273.15+15)/6.5e-3; // (15C => to K) / 6.5e-3
 	}
 
 	return result;
@@ -266,14 +267,15 @@ bool bmp280_calibrate()
 	// average out
 	if (result == true)
 	{
-		temperature_reference = 0;
+		temperature_reference_over_Lb = 0;
 		pressure_reference = 0;
 
 		for(uint8_t n = 0; n < number_samples; n++)
 		{
-			temperature_reference += temperature_list[n] / number_samples;
+			temperature_reference_over_Lb += temperature_list[n] / number_samples;
 			pressure_reference += pressure_list[n] / number_samples;
 		}
+		temperature_reference_over_Lb = (temperature_reference_over_Lb + 273.15) / 6.5e-3;
 	}
 
 	// restore previous settings
@@ -291,7 +293,31 @@ bool bmp280_calibrate()
 
 bool bmp280_get_altitude_delta(double *altitude_delta)
 {
-	return true;
+	// https://en.wikipedia.org/wiki/Pressure_altitude
+	// https://physics.stackexchange.com/questions/333475/how-to-calculate-altitude-from-current-temperature-and-pressure
+	// https://github.com/adafruit/Adafruit_BMP280_Library/blob/master/Adafruit_BMP280.cpp#L321C56-L321C63
+	// https://cdn-shop.adafruit.com/datasheets/BST-BMP180-DS000-09.pdf
+	// https://forum.arduino.cc/t/barometric-pressure-to-altitude/297866/5
+	// https://en.wikipedia.org/wiki/Barometric_formula
+
+	bool result = true;
+
+	double pressure;
+	const double pow_const = 0.19026643566373183;
+
+	// get current pressure
+	if (result == true)
+	{
+		result = bmp280_get_pressure(&pressure);
+	}
+
+	// calculate altitude delta
+	if (result == true)
+	{
+		*altitude_delta = temperature_reference_over_Lb * (1 - pow(pressure / pressure_reference, pow_const));
+	}
+
+	return result;
 }
 
 //=============================================================================

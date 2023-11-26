@@ -66,6 +66,18 @@ void bmp280_loop()
 //	bmp280_initialize();
 	bmp280_application_initialize();
 
+	double altitude;
+	uint8_t msg[64];
+	uint16_t msg_len;
+
+	while(true)
+	{
+		bmp280_application_get_altitude_delta(&altitude);
+
+		msg_len = (uint16_t)sprintf((char*)msg, "BMP280: Altitude: %7.3f cm\r\n", altitude*100);
+		HAL_UART_Transmit(&huart2, msg, msg_len, HAL_MAX_DELAY);
+		HAL_Delay(500);
+	}
 
 }
 
@@ -106,7 +118,7 @@ int main(void)
 
   uint8_t msg[64];
   sprintf((char *)msg, "Hello World\r\n");
-  HAL_UART_Transmit(&huart2, msg, strlen(msg), HAL_MAX_DELAY);
+  HAL_UART_Transmit(&huart2, msg, (uint16_t)strlen((char*)msg), HAL_MAX_DELAY);
 
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
   __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 20e3);
