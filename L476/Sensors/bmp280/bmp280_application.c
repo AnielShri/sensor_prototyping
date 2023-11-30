@@ -98,7 +98,7 @@ bool bmp280_application_initialize()
 	bmp280_pressure_oversampling_enum pressure_oversampling = BMP280_PRESSURE_OVERSAMPLING_16X_ULTRA_HIGH_RESOLUTION;
 	bmp280_temperature_oversampling_enum temperature_oversampling = BMP280_TEMPERATURE_OVERSAMPLING_2X;
 
-	bmp280_filter_coefficient_enum filter = BMP280_FILTER_COEFFIENT_4X;
+	bmp280_filter_coefficient_enum filter = BMP280_FILTER_OFF;
 	bmp280_standby_time_enum standby_time = BMP280_STANDBY_TIME_0_5_MS;
 	bmp280_spi3w_enabled_enum spi3w_enabled = BMP280_SPI3W_DISABLED;
 

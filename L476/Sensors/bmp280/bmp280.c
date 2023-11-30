@@ -219,7 +219,7 @@ bool bmp280_calibrate()
 	uint8_t previous_config;
 	uint8_t previous_measurement_control;
 
-	const uint8_t number_samples = 20;
+	const uint8_t number_samples = 100;
 	double pressure_list[number_samples];
 	double temperature_list[number_samples];
 
@@ -252,7 +252,7 @@ bool bmp280_calibrate()
 	}
 
 	// throw away first set of samples to stabilize internal filter
-	for (uint8_t n = 0; n < 10 && result == true; n++)
+	for (uint8_t n = 0; n < 20 && result == true; n++)
 	{
 		result = bmp280_get_temperature_and_pressure(&(temperature_list[0]), &(pressure_list[0]));
 		bmp280_sleep(40);

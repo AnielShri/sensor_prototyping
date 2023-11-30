@@ -76,7 +76,7 @@ void bmp280_loop()
 
 		msg_len = (uint16_t)sprintf((char*)msg, "BMP280: Altitude: %7.3f cm\r\n", altitude*100);
 		HAL_UART_Transmit(&huart2, msg, msg_len, HAL_MAX_DELAY);
-		HAL_Delay(500);
+		HAL_Delay(2000);
 	}
 
 }
