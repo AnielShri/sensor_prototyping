@@ -1,12 +1,12 @@
 /*
- * vl6180x_defines.h
+ * vl6180x_definitions.h
  *
  *  Created on: Nov 30, 2023
  *      Author: Aniel
  */
 
-#ifndef VL6180X_VL6180X_DEFINES_H_
-#define VL6180X_VL6180X_DEFINES_H_
+#ifndef VL6180X_VL6180X_DEFINITIONS_H_
+#define VL6180X_VL6180X_DEFINITIONS_H_
 
 //=============================================================================
 //	I2C device addresses
@@ -94,5 +94,9 @@ typedef enum
 }vl6180x_register_address_enum;
 
 
+//=============================================================================
+//	identification values
+//=============================================================================
+#define VL6180X_REGISTER_IDENTIFICATION_MODEL_ID_VALUE 0xB4
 
-#endif /* VL6180X_VL6180X_DEFINES_H_ */
+#endif /* VL6180X_VL6180X_DEFINITIONS_H_ */
