@@ -27,6 +27,8 @@ static bool vl6180x_clear_startup_flag();
 static bool vl6180x_load_SR03_settings();
 static bool vl6180x_load_recommended_configuration();
 
+static bool vl6180x_retrieve_measurement(float *distance_mm);
+static bool vl6180x_clear_data_ready_interrupt();
 
 /******************************************************************************
  * @brief Initializes global variables and checks sensor ID
@@ -37,7 +39,7 @@ static bool vl6180x_load_recommended_configuration();
  * 
  * @param[out] true               if all succeeds
  */
-bool vl6180x_initialize(vl6180x_register_operation *vl6180x_read, vl6180x_register_operation *vl6180x_write, vl6180x_sleep_function *vl6180x_sleep_fn_ms)
+bool  vl6180x_initialize(vl6180x_register_operation *vl6180x_read, vl6180x_register_operation *vl6180x_write, vl6180x_sleep_function *vl6180x_sleep_fn_ms)
 {
 	bool result = true;
 
@@ -84,7 +86,68 @@ bool vl6180x_initialize(vl6180x_register_operation *vl6180x_read, vl6180x_regist
 }
 
 
+/******************************************************************************
+ * @brief Start single measurement
+ * 
+ * @pre device Initialized
+ * 
+ * @param[out] true if single measurement started
+*/
+bool vl680x_request_single_measurement()
+{
+	bool result = true;
+}
 
+
+/******************************************************************************
+ * @brief Start continuous measurement
+ * 
+ * @pre device initialized
+ * 
+ * @param[out] true if continuous mode started
+*/
+bool vl6180x_start_continuous_measurements()
+{
+	bool result = true;
+}
+
+
+/******************************************************************************
+ * @brief Stop continuous measurements
+ * 
+ * @param[out] true if continuous mode stopped
+*/
+bool vl6180x_stop_continous_measurements()
+{
+	bool result = true;
+}
+
+
+/******************************************************************************
+ * @brief Check if new data is available
+ * 
+ * @pre Single or Continuos measurement started
+ * 
+ * @param[out] true if check was OK and data available
+*/
+bool vl6180x_is_measurement_ready()
+{
+	bool result = true;
+}
+
+
+/******************************************************************************
+ * @brief Get results of single measurement
+ * 
+ * @pre measurement ready
+ * 
+ * @param[out] distance in mm
+ * @param[out] true if succeeded
+*/
+bool vl6180x_get_measurement_result(float *distance_mm)
+{
+	bool result = true
+}
 
 
 //=============================================================================
@@ -175,33 +238,33 @@ static bool vl6180x_load_SR03_settings()
 	result &= vl6180x_write_registers(0x0207, &(uint8_t){0x01}, 1);
 	result &= vl6180x_write_registers(0x0208, &(uint8_t){0x01}, 1);
 	result &= vl6180x_write_registers(0x0096, &(uint8_t){0x00}, 1);
-	result &= vl6180x_write_registers(0x0097, &(uint8_t){0xfd}, 1);
-	result &= vl6180x_write_registers(0x00e3, &(uint8_t){0x00}, 1);
-	result &= vl6180x_write_registers(0x00e4, &(uint8_t){0x04}, 1);
-	result &= vl6180x_write_registers(0x00e5, &(uint8_t){0x02}, 1);
-	result &= vl6180x_write_registers(0x00e6, &(uint8_t){0x01}, 1);
-	result &= vl6180x_write_registers(0x00e7, &(uint8_t){0x03}, 1);
-	result &= vl6180x_write_registers(0x00f5, &(uint8_t){0x02}, 1);
-	result &= vl6180x_write_registers(0x00d9, &(uint8_t){0x05}, 1);
-	result &= vl6180x_write_registers(0x00db, &(uint8_t){0xce}, 1);
-	result &= vl6180x_write_registers(0x00dc, &(uint8_t){0x03}, 1);
-	result &= vl6180x_write_registers(0x00dd, &(uint8_t){0xf8}, 1);
-	result &= vl6180x_write_registers(0x009f, &(uint8_t){0x00}, 1);
-	result &= vl6180x_write_registers(0x00a3, &(uint8_t){0x3c}, 1);
-	result &= vl6180x_write_registers(0x00b7, &(uint8_t){0x00}, 1);
-	result &= vl6180x_write_registers(0x00bb, &(uint8_t){0x3c}, 1);
-	result &= vl6180x_write_registers(0x00b2, &(uint8_t){0x09}, 1);
-	result &= vl6180x_write_registers(0x00ca, &(uint8_t){0x09}, 1);
+	result &= vl6180x_write_registers(0x0097, &(uint8_t){0xFD}, 1);
+	result &= vl6180x_write_registers(0x00E3, &(uint8_t){0x00}, 1);
+	result &= vl6180x_write_registers(0x00E4, &(uint8_t){0x04}, 1);
+	result &= vl6180x_write_registers(0x00E5, &(uint8_t){0x02}, 1);
+	result &= vl6180x_write_registers(0x00E6, &(uint8_t){0x01}, 1);
+	result &= vl6180x_write_registers(0x00E7, &(uint8_t){0x03}, 1);
+	result &= vl6180x_write_registers(0x00F5, &(uint8_t){0x02}, 1);
+	result &= vl6180x_write_registers(0x00D9, &(uint8_t){0x05}, 1);
+	result &= vl6180x_write_registers(0x00DB, &(uint8_t){0xCE}, 1);
+	result &= vl6180x_write_registers(0x00DC, &(uint8_t){0x03}, 1);
+	result &= vl6180x_write_registers(0x00DD, &(uint8_t){0xF8}, 1);
+	result &= vl6180x_write_registers(0x009F, &(uint8_t){0x00}, 1);
+	result &= vl6180x_write_registers(0x00A3, &(uint8_t){0x3C}, 1);
+	result &= vl6180x_write_registers(0x00B7, &(uint8_t){0x00}, 1);
+	result &= vl6180x_write_registers(0x00BB, &(uint8_t){0x3C}, 1);
+	result &= vl6180x_write_registers(0x00B2, &(uint8_t){0x09}, 1);
+	result &= vl6180x_write_registers(0x00CA, &(uint8_t){0x09}, 1);
 	result &= vl6180x_write_registers(0x0198, &(uint8_t){0x01}, 1);
-	result &= vl6180x_write_registers(0x01b0, &(uint8_t){0x17}, 1);
-	result &= vl6180x_write_registers(0x01ad, &(uint8_t){0x00}, 1);
-	result &= vl6180x_write_registers(0x00ff, &(uint8_t){0x05}, 1);
+	result &= vl6180x_write_registers(0x01B0, &(uint8_t){0x17}, 1);
+	result &= vl6180x_write_registers(0x01AD, &(uint8_t){0x00}, 1);
+	result &= vl6180x_write_registers(0x00FF, &(uint8_t){0x05}, 1);
 	result &= vl6180x_write_registers(0x0100, &(uint8_t){0x05}, 1);
 	result &= vl6180x_write_registers(0x0199, &(uint8_t){0x05}, 1);
-	result &= vl6180x_write_registers(0x01a6, &(uint8_t){0x1b}, 1);
-	result &= vl6180x_write_registers(0x01ac, &(uint8_t){0x3e}, 1);
-	result &= vl6180x_write_registers(0x01a7, &(uint8_t){0x1f}, 1);
-	result &= vl6180x_write_registers(0x0030, &(uint8_t){0x00}, 1);	
+	result &= vl6180x_write_registers(0x01A6, &(uint8_t){0x1B}, 1);
+	result &= vl6180x_write_registers(0x01AC, &(uint8_t){0x3E}, 1);
+	result &= vl6180x_write_registers(0x01A7, &(uint8_t){0x1F}, 1);
+	result &= vl6180x_write_registers(0X0030, &(uint8_t){0x00}, 1);	
 
 	return result;
 }
@@ -218,35 +281,59 @@ static bool vl6180x_load_recommended_configuration()
 	bool result = true;
 
 	// Recommended : Public registers - See data sheet for more detail
-	result &= vl6180x_write_registers(0x0011, &(uint8_t){0x10}, 1);	// Enables polling for ‘New Sample ready’
-																	// when measurement completes
 
-	result &= vl6180x_write_registers(0x010a, &(uint8_t){0x30}, 1); // Set the averaging sample period
-																	// (compromise between lower noise and
-																	// increased execution time)
+	// Enables polling for ‘New Sample ready’ when measurement completes
+	result &= vl6180x_write_registers(0x0011, &(uint8_t){0x10}, 1);
 
-	result &= vl6180x_write_registers(0x003f, &(uint8_t){0x46}, 1); // Sets the light and dark gain (upper
-																	// nibble). Dark gain should not be
-																	// changed.
+	// Set the averaging sample period (compromise between lower noise and
+	// increased execution time)
+	result &= vl6180x_write_registers(0x010A, &(uint8_t){0x30}, 1);
 
-	result &= vl6180x_write_registers(0x0031, &(uint8_t){0xFF}, 1); // sets the # of range measurements after
-																	// which auto calibration of system is
-																	// performed
+	// Sets the light and dark gain (upper nibble). Dark gain should not be changed.
+	result &= vl6180x_write_registers(0x003F, &(uint8_t){0x46}, 1);
 
-	result &= vl6180x_write_registers(0x0040, &(uint8_t){0x63}, 1); // Set ALS integration time to 100ms
+	// sets the # of range measurements after which auto calibration of system is performed
+	result &= vl6180x_write_registers(0x0031, &(uint8_t){0xFF}, 1); 
 
-	result &= vl6180x_write_registers(0x002e, &(uint8_t){0x01}, 1); // perform a single temperature calibration
-																	// of the ranging sensor
+	// Set ALS integration time to 100ms
+	result &= vl6180x_write_registers(0x0040, &(uint8_t){0x63}, 1);
 
-	//Optional: Public registers - See data sheet for more detail
-	result &= vl6180x_write_registers(0x001b, &(uint8_t){0x09}, 1); // Set default ranging inter-measurement
-																	// period to 100ms
+	// perform a single temperature calibration of the ranging sensor
+	result &= vl6180x_write_registers(0x002E, &(uint8_t){0x01}, 1); 
 
-	result &= vl6180x_write_registers(0x003e, &(uint8_t){0x31}, 1); // Set default ALS inter-measurement period
-																	// to 500ms
+	//Optional: Public registers - See daaa sheet for more detail
+	
+	// Set default ranging inter-measurement period to 100ms
+	result &= vl6180x_write_registers(0x001B, &(uint8_t){0x09}, 1);
 
-	result &= vl6180x_write_registers(0x0014, &(uint8_t){0x24}, 1); // Configures interrupt on ‘New Sample
-																	// Ready threshold event’
+	// Set default ALS inter-measurement period to 500ms
+	result &= vl6180x_write_registers(0x003E, &(uint8_t){0x31}, 1); 
+
+	// Configures interrupt on ‘New Sample ready threshold event’
+	result &= vl6180x_write_registers(0x0014, &(uint8_t){0x24}, 1);
 
 	return result;
+}
+
+
+/******************************************************************************
+ * @brief reads measurement register
+ * 
+ * @param[out] distance in mm
+ * @param[out] true if succeeded
+*/
+static bool vl6180x_retrieve_measurement(float *distance_mm)
+{
+	bool result = true;
+}
+
+
+/******************************************************************************
+ * @brief clears data ready interrupt
+ * 
+ * @param[out] true if succeeded
+*/
+static bool vl6180x_clear_data_ready_interrupt()
+{
+	bool result = true;
 }
