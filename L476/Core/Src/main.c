@@ -29,6 +29,8 @@
 
 #include "../../Sensors/bmp280/bmp280.h"
 #include "../../Sensors/bmp280/bmp280_application.h"
+
+#include "../../Sensors/vl6180x/vl6180x_application.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -81,6 +83,11 @@ void bmp280_loop()
 
 }
 
+
+void vl6180x_loop()
+{
+	vl6180x_application_initialize_device();
+}
 /* USER CODE END 0 */
 
 /**

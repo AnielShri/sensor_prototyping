@@ -14,7 +14,7 @@
 #include "bmp280_application.h"
 
 
-const uint8_t device_i2c_address = BMP280_I2C_DEVICE_ADDRESS;
+const uint8_t bm280_device_i2c_address = BMP280_I2C_DEVICE_ADDRESS;
 
 bool bmp280_application_read_registers(const uint8_t memory_address, uint8_t *data_buffer, const uint16_t data_length)
 {
@@ -22,7 +22,7 @@ bool bmp280_application_read_registers(const uint8_t memory_address, uint8_t *da
 	uint8_t msg[92];
 	uint16_t msg_len;
 
-	HAL_StatusTypeDef retval = HAL_I2C_Mem_Read(&hi2c3, device_i2c_address, memory_address, I2C_MEMADD_SIZE_8BIT, data_buffer, data_length, HAL_MAX_DELAY);
+	HAL_StatusTypeDef retval = HAL_I2C_Mem_Read(&hi2c3, bm280_device_i2c_address, memory_address, I2C_MEMADD_SIZE_8BIT, data_buffer, data_length, HAL_MAX_DELAY);
 
 	if (retval == HAL_OK)
 	{
@@ -46,7 +46,7 @@ bool bmp280_application_write_registers(const uint8_t memory_address, uint8_t *d
 	uint8_t msg[92];
 	uint16_t msg_len;
 
-	HAL_StatusTypeDef retval = HAL_I2C_Mem_Write(&hi2c3, device_i2c_address, memory_address, I2C_MEMADD_SIZE_8BIT, data_buffer, data_length, HAL_MAX_DELAY);
+	HAL_StatusTypeDef retval = HAL_I2C_Mem_Write(&hi2c3, bm280_device_i2c_address, memory_address, I2C_MEMADD_SIZE_8BIT, data_buffer, data_length, HAL_MAX_DELAY);
 
 	if (retval == HAL_OK)
 	{
