@@ -9,6 +9,11 @@
 #define VL6180X_VL6180X_DEFINITIONS_H_
 
 //=============================================================================
+//	generic error
+//=============================================================================
+#define  VL6180X_GENERIC_ERROR (0xFF)
+
+//=============================================================================
 //	I2C device addresses
 //=============================================================================
 
@@ -17,10 +22,6 @@
 //=============================================================================
 //	Internal register addresses
 //=============================================================================
-
-
-
-
 typedef enum
 {
 	VL6180X_REGISTER_IDENTIFICATION_MODEL_ID         = 0x000,
@@ -101,6 +102,76 @@ typedef enum
 //=============================================================================
 //	identification values
 //=============================================================================
-#define VL6180X_REGISTER_IDENTIFICATION_MODEL_ID_VALUE 0xB4
+#define VL6180X_REGISTER_IDENTIFICATION_MODEL_ID_VALUE (0xB4)
+
+
+//=============================================================================
+//	VL6180X_REGISTER_SYSRANGE_START
+//=============================================================================
+#define VL6180X_REGISTER_SYSRANGE_START_VALUE_DISABLE                (0b00)
+#define VL6180X_REGISTER_SYSRANGE_START_VALUE_SINGLE_SHOT            (0b01)
+
+// According to VL6180X datasheet:
+// bit 0 => Setting this bit to 1 in continuous mode will either start (if stopped) or halt (if started) continuous operation
+//			This bit is auto-cleared in both modes of operation.
+// bit 1 => 1: Ranging Mode Continuous
+#define VL6180X_REGISTER_SYSRANGE_START_VALUE_TOGGLE_CONTINUOUS_MODE (0b11)
+
+// AN4545, chapter 2.1 suggests to write 0x01 instead of using the toggle functionality
+// this is most likely to explicitly disable continuous mode instead of accidentally starting it
+#define VL6180X_REGISTER_SYSRANGE_START_VALUE_STOP_CONTINUOUS_MODE 	 (0b01)
+
+
+//=============================================================================
+//	VL6180X_REGISTER_SYSTEM_INTERRUPT_CLEAR
+//=============================================================================
+typedef enum
+{
+	VL6180X_REGISTER_SYSTEM_INTERRUPT_CLEAR_VALUE_RANGE = 0b001,
+	VL6180X_REGISTER_SYSTEM_INTERRUPT_CLEAR_VALUE_ALS   = 0b010,
+	VL6180X_REGISTER_SYSTEM_INTERRUPT_CLEAR_VALUE_ERROR = 0b100,
+	VL6180X_REGISTER_SYSTEM_INTERRUPT_CLEAR_VALUE_ALL   = 0b111,
+}vl6180x_int_clear_sig_enum;
+
+
+//=============================================================================
+//	VL6180X_REGISTER_RESULT_RANGE_STATUS
+//=============================================================================
+
+#define VL6180X_REGISTER_RESULT_RANGE_STATUS_MASK_DEVICE_READY 		  (0b00000001)
+#define VL6180X_REGISTER_RESULT_RANGE_STATUS_VALUE_DEVICE_READY_FALSE (0b0)
+#define VL6180X_REGISTER_RESULT_RANGE_STATUS_VALUE_DEVICE_READY_TRUE  (0b1)
+
+//=============================================================================
+//	VL6180X_REGISTER_RESULT_INTERRUPT_STATUS_GPIO
+//=============================================================================
+typedef enum
+{
+	VL6180X_REGISTER_RESULT_INTERRUPT_STATUS_GPIO_VALUE_RANGE_NO_EVENTS               = 0b000,
+	VL6180X_REGISTER_RESULT_INTERRUPT_STATUS_GPIO_VALUE_RANGE_LOW_LEVEL_THRESHOLD     = 0b001,
+	VL6180X_REGISTER_RESULT_INTERRUPT_STATUS_GPIO_VALUE_RANGE_HIGH_LEVEL_THRESHOLD    = 0b010,
+	VL6180X_REGISTER_RESULT_INTERRUPT_STATUS_GPIO_VALUE_RANGE_OUT_OF_WINDOW_THRESHOLD = 0b011,
+	VL6180X_REGISTER_RESULT_INTERRUPT_STATUS_GPIO_VALUE_RANGE_NEW_SAMPLE_READY        = 0b100,
+}vl6180x_result_int_range_gpio_enum;
+#define VL6180X_REGISTER_RESULT_INTERRUPT_STATUS_GPIO_MASK_RANGE (0b00000111)
+
+typedef enum
+{
+	VL6180X_REGISTER_RESULT_INTERRUPT_STATUS_GPIO_VALUE_ALS_NO_EVENTS               = (0b000 << 2),
+	VL6180X_REGISTER_RESULT_INTERRUPT_STATUS_GPIO_VALUE_ALS_LOW_LEVEL_THRESHOLD     = (0b001 << 2),
+	VL6180X_REGISTER_RESULT_INTERRUPT_STATUS_GPIO_VALUE_ALS_HIGH_LEVEL_THRESHOLD    = (0b010 << 2),
+	VL6180X_REGISTER_RESULT_INTERRUPT_STATUS_GPIO_VALUE_ALS_OUT_OF_WINDOW_THRESHOLD = (0b011 << 2),
+	VL6180X_REGISTER_RESULT_INTERRUPT_STATUS_GPIO_VALUE_ALS_NEW_SAMPLE_READY        = (0b100 << 2),
+}vl6180x_result_int_als_gpio_enum;
+#define VL6180X_REGISTER_RESULT_INTERRUPT_STATUS_GPIO_MASK_ALS (0b00111000)
+
+typedef enum
+{
+	VL6180X_REGISTER_RESULT_INTERRUPT_STATUS_GPIO_VALUE_ERROR_NO_ERROR           = (0b00 << 5),
+	VL6180X_REGISTER_RESULT_INTERRUPT_STATUS_GPIO_VALUE_ERROR_LASER_SAFETY_ERROR = (0b01 << 5),
+	VL6180X_REGISTER_RESULT_INTERRUPT_STATUS_GPIO_VALUE_ERROR_PLL_ERROR          = (0b00 << 5),
+}vl6180x_result_int_error_gpio;
+#define VL6180X_REGISTER_RESULT_INTERRUPT_STATUS_GPIO_MASK_ERROR (0b11000000)
+
 
 #endif /* VL6180X_VL6180X_DEFINITIONS_H_ */

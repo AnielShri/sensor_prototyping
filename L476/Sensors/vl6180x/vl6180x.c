@@ -87,15 +87,50 @@ bool  vl6180x_initialize(vl6180x_register_operation *vl6180x_read, vl6180x_regis
 
 
 /******************************************************************************
+ * @brief indicates the device mode and configuration can be changed 
+ * 		  and a new start command will be accepted.
+ * 
+ * @param[out] true if device ready
+*/
+bool vl6180x_is_device_ready()
+{
+	bool result = true;
+	uint8_t data;
+
+	result = vl6180x_read_registers(VL6180X_REGISTER_RESULT_RANGE_STATUS, &data, 1);
+
+	if (result == true)
+	{
+		uint8_t device_ready = data & VL6180X_REGISTER_RESULT_RANGE_STATUS_MASK_DEVICE_READY;
+		if (device_ready == VL6180X_REGISTER_RESULT_RANGE_STATUS_VALUE_DEVICE_READY_FALSE)
+		{
+			result = false;
+		}
+	}
+
+	return result;
+}
+
+
+/******************************************************************************
  * @brief Start single measurement
  * 
  * @pre device Initialized
  * 
  * @param[out] true if single measurement started
 */
-bool vl680x_request_single_measurement()
+bool vl6180x_request_single_measurement()
 {
 	bool result = true;
+
+	result = vl6180x_is_device_ready();
+
+	if (result == true)
+	{
+		result = vl6180x_write_registers(VL6180X_REGISTER_SYSRANGE_START, &(uint8_t){VL6180X_REGISTER_SYSRANGE_START_VALUE_SINGLE_SHOT}, 1);
+	}
+
+	return result;
 }
 
 
@@ -109,17 +144,37 @@ bool vl680x_request_single_measurement()
 bool vl6180x_start_continuous_measurements()
 {
 	bool result = true;
+
+	result = vl6180x_is_device_ready();
+
+	if (result == true)
+	{
+		result = vl6180x_write_registers(VL6180X_REGISTER_SYSRANGE_START, &(uint8_t){VL6180X_REGISTER_SYSRANGE_START_VALUE_TOGGLE_CONTINUOUS_MODE}, 1);
+	}
+
+	return result;
 }
 
 
 /******************************************************************************
  * @brief Stop continuous measurements
  * 
+ * @pre continuous mode started
+ * 
  * @param[out] true if continuous mode stopped
 */
 bool vl6180x_stop_continous_measurements()
 {
 	bool result = true;
+
+	result = vl6180x_is_device_ready();
+
+	if (result == true)
+	{
+		result = vl6180x_write_registers(VL6180X_REGISTER_SYSRANGE_START, &(uint8_t){VL6180X_REGISTER_SYSRANGE_START_VALUE_STOP_CONTINUOUS_MODE}, 1);
+	}
+
+	return result;
 }
 
 
@@ -128,11 +183,42 @@ bool vl6180x_stop_continous_measurements()
  * 
  * @pre Single or Continuos measurement started
  * 
+ * @param[out] error_flag with non-zero value if any error occred while aquiring measurement result
  * @param[out] true if check was OK and data available
 */
-bool vl6180x_is_measurement_ready()
+bool vl6180x_is_measurement_ready(uint8_t *error_flag)
 {
 	bool result = true;
+	uint8_t data;
+
+	result = vl6180x_read_registers(VL6180X_REGISTER_RESULT_INTERRUPT_STATUS_GPIO, &data, 1);
+
+	if (result == false)
+	{
+		*error_flag = VL6180X_GENERIC_ERROR;
+	}
+
+	// check for errors
+	if (result == true)
+	{
+		*error_flag = data & VL6180X_REGISTER_RESULT_INTERRUPT_STATUS_GPIO_MASK_ERROR;
+		if (*error_flag != (uint8_t)VL6180X_REGISTER_RESULT_INTERRUPT_STATUS_GPIO_VALUE_ERROR_NO_ERROR)
+		{
+			result = false;
+		}
+	}
+
+	// check for new data
+	if (result == true)
+	{
+		vl6180x_result_int_range_gpio_enum range_sample_status = (vl6180x_result_int_range_gpio_enum) (data & VL6180X_REGISTER_RESULT_INTERRUPT_STATUS_GPIO_MASK_RANGE);
+		if (range_sample_status != VL6180X_REGISTER_RESULT_INTERRUPT_STATUS_GPIO_VALUE_RANGE_NEW_SAMPLE_READY)
+		{
+			result = false;
+		}
+	}
+
+	return result;
 }
 
 
@@ -144,9 +230,11 @@ bool vl6180x_is_measurement_ready()
  * @param[out] distance in mm
  * @param[out] true if succeeded
 */
-bool vl6180x_get_measurement_result(float *distance_mm)
+bool vl6180x_get_measurement_result(float *distance_mm, uint8_t *error_flag)
 {
-	bool result = true
+	bool result = true;
+
+	return result;
 }
 
 
@@ -192,11 +280,7 @@ static bool vl6180x_has_startup_flag()
 	// can therefore use this to check for a reset condition
 	result = vl6180x_read_registers(VL6180X_REGISTER_SYSTEM_FRESH_OUT_OF_RESET, &data, 1);
 
-	if(result == true && data == 0x1)
-	{
-		result = true;
-	}
-	else
+	if(result != true || data != 0x1)
 	{
 		result = false;
 	}
@@ -238,37 +322,36 @@ static bool vl6180x_load_SR03_settings()
 	result &= vl6180x_write_registers(0x0207, &(uint8_t){0x01}, 1);
 	result &= vl6180x_write_registers(0x0208, &(uint8_t){0x01}, 1);
 	result &= vl6180x_write_registers(0x0096, &(uint8_t){0x00}, 1);
-	result &= vl6180x_write_registers(0x0097, &(uint8_t){0xFD}, 1);
-	result &= vl6180x_write_registers(0x00E3, &(uint8_t){0x00}, 1);
-	result &= vl6180x_write_registers(0x00E4, &(uint8_t){0x04}, 1);
-	result &= vl6180x_write_registers(0x00E5, &(uint8_t){0x02}, 1);
-	result &= vl6180x_write_registers(0x00E6, &(uint8_t){0x01}, 1);
-	result &= vl6180x_write_registers(0x00E7, &(uint8_t){0x03}, 1);
-	result &= vl6180x_write_registers(0x00F5, &(uint8_t){0x02}, 1);
-	result &= vl6180x_write_registers(0x00D9, &(uint8_t){0x05}, 1);
-	result &= vl6180x_write_registers(0x00DB, &(uint8_t){0xCE}, 1);
-	result &= vl6180x_write_registers(0x00DC, &(uint8_t){0x03}, 1);
-	result &= vl6180x_write_registers(0x00DD, &(uint8_t){0xF8}, 1);
-	result &= vl6180x_write_registers(0x009F, &(uint8_t){0x00}, 1);
-	result &= vl6180x_write_registers(0x00A3, &(uint8_t){0x3C}, 1);
-	result &= vl6180x_write_registers(0x00B7, &(uint8_t){0x00}, 1);
-	result &= vl6180x_write_registers(0x00BB, &(uint8_t){0x3C}, 1);
-	result &= vl6180x_write_registers(0x00B2, &(uint8_t){0x09}, 1);
-	result &= vl6180x_write_registers(0x00CA, &(uint8_t){0x09}, 1);
+	result &= vl6180x_write_registers(0x0097, &(uint8_t){0xfd}, 1);
+	result &= vl6180x_write_registers(0x00e3, &(uint8_t){0x01}, 1);
+	result &= vl6180x_write_registers(0x00e4, &(uint8_t){0x03}, 1);
+	result &= vl6180x_write_registers(0x00e5, &(uint8_t){0x02}, 1);
+	result &= vl6180x_write_registers(0x00e6, &(uint8_t){0x01}, 1);
+	result &= vl6180x_write_registers(0x00e7, &(uint8_t){0x03}, 1);
+	result &= vl6180x_write_registers(0x00f5, &(uint8_t){0x02}, 1);
+	result &= vl6180x_write_registers(0x00d9, &(uint8_t){0x05}, 1);
+	result &= vl6180x_write_registers(0x00db, &(uint8_t){0xce}, 1);
+	result &= vl6180x_write_registers(0x00dc, &(uint8_t){0x03}, 1);
+	result &= vl6180x_write_registers(0x00dd, &(uint8_t){0xf8}, 1);
+	result &= vl6180x_write_registers(0x009f, &(uint8_t){0x00}, 1);
+	result &= vl6180x_write_registers(0x00a3, &(uint8_t){0x3c}, 1);
+	result &= vl6180x_write_registers(0x00b7, &(uint8_t){0x00}, 1);
+	result &= vl6180x_write_registers(0x00bb, &(uint8_t){0x3c}, 1);
+	result &= vl6180x_write_registers(0x00b2, &(uint8_t){0x09}, 1);
+	result &= vl6180x_write_registers(0x00ca, &(uint8_t){0x09}, 1);
 	result &= vl6180x_write_registers(0x0198, &(uint8_t){0x01}, 1);
-	result &= vl6180x_write_registers(0x01B0, &(uint8_t){0x17}, 1);
-	result &= vl6180x_write_registers(0x01AD, &(uint8_t){0x00}, 1);
-	result &= vl6180x_write_registers(0x00FF, &(uint8_t){0x05}, 1);
+	result &= vl6180x_write_registers(0x01b0, &(uint8_t){0x17}, 1);
+	result &= vl6180x_write_registers(0x01ad, &(uint8_t){0x00}, 1);
+	result &= vl6180x_write_registers(0x00ff, &(uint8_t){0x05}, 1);
 	result &= vl6180x_write_registers(0x0100, &(uint8_t){0x05}, 1);
 	result &= vl6180x_write_registers(0x0199, &(uint8_t){0x05}, 1);
-	result &= vl6180x_write_registers(0x01A6, &(uint8_t){0x1B}, 1);
-	result &= vl6180x_write_registers(0x01AC, &(uint8_t){0x3E}, 1);
-	result &= vl6180x_write_registers(0x01A7, &(uint8_t){0x1F}, 1);
-	result &= vl6180x_write_registers(0X0030, &(uint8_t){0x00}, 1);	
+	result &= vl6180x_write_registers(0x01a6, &(uint8_t){0x1b}, 1);
+	result &= vl6180x_write_registers(0x01ac, &(uint8_t){0x3e}, 1);
+	result &= vl6180x_write_registers(0x01a7, &(uint8_t){0x1f}, 1);
+	result &= vl6180x_write_registers(0x0030, &(uint8_t){0x00}, 1);	
 
 	return result;
 }
-
 
 /******************************************************************************
  * @brief Load recommended settings
@@ -325,6 +408,8 @@ static bool vl6180x_load_recommended_configuration()
 static bool vl6180x_retrieve_measurement(float *distance_mm)
 {
 	bool result = true;
+
+	return result;
 }
 
 
@@ -336,4 +421,6 @@ static bool vl6180x_retrieve_measurement(float *distance_mm)
 static bool vl6180x_clear_data_ready_interrupt()
 {
 	bool result = true;
+
+	return result;
 }
