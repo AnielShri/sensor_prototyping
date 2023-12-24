@@ -87,6 +87,17 @@ void bmp280_loop()
 void vl6180x_loop()
 {
 	vl6180x_application_initialize_device();
+
+	uint8_t distance_mm;
+	uint8_t msg[64];
+	uint16_t msg_len;
+
+	while(true)
+	{
+		vl6180x_application_poll_measurement(&distance_mm);
+		msg_len = (uint16_t)sprintf((char*)msg, "VL6180X: Distance: %dmm\r\n", distance_mm);
+		HAL_UART_Transmit(&huart2, msg, msg_len, HAL_MAX_DELAY);
+	}
 }
 /* USER CODE END 0 */
 

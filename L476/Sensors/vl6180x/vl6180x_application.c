@@ -52,7 +52,7 @@ bool vl6180x_application_initialize_device()
 /******************************************************************************
  * @brief client API to retrieve measurement
 */
-bool vl6180x_application_poll_for_measurement(uint8_t distance_mm)
+bool vl6180x_application_poll_measurement(uint8_t *distance_mm)
 {
 	bool result = true;
 
@@ -61,7 +61,7 @@ bool vl6180x_application_poll_for_measurement(uint8_t distance_mm)
 	if (result == true)
 	{
 		uint8_t error_flag;
-		result = vl6180x_get_measurement_result(&distance_mm, &error_flag);
+		result = vl6180x_get_measurement_result(distance_mm, &error_flag);
 	}
 
 	return result;
