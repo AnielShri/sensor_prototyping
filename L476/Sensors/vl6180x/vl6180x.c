@@ -199,7 +199,7 @@ bool vl6180x_is_measurement_ready(uint8_t *error_flag)
 
 
 /******************************************************************************
- * @brief blocking polling function to check for new data
+ * @brief blocking function to check for new data
  * 
  * @param[out] true if new data available
 */
