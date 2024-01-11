@@ -86,17 +86,61 @@ void bmp280_loop()
 
 void vl6180x_loop()
 {
-	vl6180x_application_initialize_device();
-
-	uint8_t distance_mm;
-	uint8_t msg[64];
+	bool result;
+	uint8_t msg[92];
 	uint16_t msg_len;
+	uint8_t distance_mm;
+	HAL_StatusTypeDef retval;
 
-	while(true)
+	uint8_t data_buffer[2] = {0};
+	uint8_t memory_address = 0x000;
+	uint16_t data_length = 2; //sizeof(data_buffer)/ sizeof(data_buffer[0]);
+	uint16_t device_address = (0x29 << 1);
+
+
+	retval = HAL_I2C_Mem_Read(&hi2c3, device_address, 0x016, I2C_MEMADD_SIZE_16BIT, data_buffer, data_length, HAL_MAX_DELAY);
+	if (retval == HAL_OK)
+	{
+		msg_len = (uint16_t)sprintf((char*)msg, "VL6180X - read registers: addr: 0x%x | Startup flag: %d (0x%x) [OK]\r\n", 0x016,  data_buffer[0], data_buffer[1]);
+	}
+	HAL_UART_Transmit(&huart2, msg, msg_len, HAL_MAX_DELAY);
+
+
+	retval = HAL_I2C_Mem_Read(&hi2c3, device_address, memory_address, I2C_MEMADD_SIZE_16BIT, data_buffer, data_length, HAL_MAX_DELAY);
+	if (retval == HAL_OK)
+	{
+		msg_len = (uint16_t)sprintf((char*)msg, "VL6180X - read registers: addr: 0x%x | Device ID: %d (0x%x) [OK]\r\n", memory_address,  data_buffer[0], data_buffer[1]);
+	}
+	HAL_UART_Transmit(&huart2, msg, msg_len, HAL_MAX_DELAY);
+
+
+	retval = HAL_I2C_Mem_Read(&hi2c3, device_address, memory_address, I2C_MEMADD_SIZE_8BIT, data_buffer, data_length, HAL_MAX_DELAY);
+	if (retval == HAL_OK)
+	{
+		msg_len = (uint16_t)sprintf((char*)msg, "VL6180X - read registers: addr: 0x%x | Device ID: %d (0x%x) [OK]\r\n", memory_address, data_buffer[0], data_buffer[1]);
+	}
+	HAL_UART_Transmit(&huart2, msg, msg_len, HAL_MAX_DELAY);
+
+
+	result = vl6180x_application_initialize_device();
+	if (result == true)
+	{
+		msg_len = (uint16_t)sprintf((char*)msg, "VL6180X: device initialization OK: %d\r\n", result);
+
+	}
+	else
+	{
+		msg_len = (uint16_t)sprintf((char*)msg, "VL6180X: device initialization FAILED: %d\r\n", result);
+	}
+	HAL_UART_Transmit(&huart2, msg, msg_len, HAL_MAX_DELAY);
+
+	while(true && (result == true))
 	{
 		vl6180x_application_poll_measurement(&distance_mm);
 		msg_len = (uint16_t)sprintf((char*)msg, "VL6180X: Distance: %dmm\r\n", distance_mm);
 		HAL_UART_Transmit(&huart2, msg, msg_len, HAL_MAX_DELAY);
+
+		HAL_Delay(1000);
 	}
 }
 /* USER CODE END 0 */
@@ -153,7 +197,11 @@ int main(void)
 	  }
   }
 
-  bmp280_loop();
+//  bmp280_loop();
+  vl6180x_loop();
+
+  msg_len = (uint16_t)sprintf((char *)msg, "Uh, we're not supposed to come here :/\r\n");
+  HAL_UART_Transmit(&huart2, msg, msg_len, 1000);
 
   /* USER CODE END 2 */
 

@@ -203,7 +203,7 @@ bool vl6180x_is_measurement_ready(uint8_t *error_flag)
  * 
  * @param[out] true if new data available
 */
-bool vl6180x_wait_for_new_measurement()
+bool vl6180x_wait_for_new_measurement(uint32_t poll_rate_ms)
 {
 	bool result = false;
 	uint8_t error_flag;
@@ -219,7 +219,7 @@ bool vl6180x_wait_for_new_measurement()
 		}
 
 		// otherwise sleep
-		vl6180x_sleep_ms(10);
+		vl6180x_sleep_ms(poll_rate_ms);
 	}
 
 	return result;

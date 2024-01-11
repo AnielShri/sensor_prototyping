@@ -26,7 +26,7 @@ bool vl6180x_start_continuous_measurements();
 bool vl6180x_stop_continous_measurements();
 
 bool vl6180x_is_measurement_ready(uint8_t *error_flag);
-bool vl6180x_wait_for_new_measurement();
+bool vl6180x_wait_for_new_measurement(uint32_t poll_rate_ms);
 bool vl6180x_get_measurement_result(uint8_t *distance_mm, uint8_t *error_flag);
 
 #endif /* VL6180X_VL6180X_H_ */
